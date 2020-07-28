@@ -1,0 +1,44 @@
+import argparse
+import os
+import subprocess
+
+parser = argparse.ArgumentParser(description="Enter the input and output files to extract keypoints")
+
+parser.add_argument("--e", "--extractor", help="Extractor path")
+parser.add_argument("--i", "--input", help="Input path")
+parser.add_argument("--o", "--output", help="Output path")
+
+args = parser.parse_args()
+
+files = []
+for (dirpath, dirnames, filenames) in os.walk(args.i):
+    files.extend(filenames)
+    break
+
+mkv_files = []
+json_files = []
+for file in files:
+    if ".mkv" in file:
+        mkv_files.append(file)
+    elif ".json" in file:
+        json_files.append(file)
+    #print(mkv_files)
+    try:
+        for mkv_file in mkv_files:
+            #print(mkv_file)
+            for json_file in json_files:
+                #print(json_file)
+                if mkv_file.replace(".mkv", "") == json_file.replace(".json", ""):
+                    continue
+                else:
+                    rename = mkv_file.replace(".mkv", ".json")
+                    command = f"MKVProcessor.exe {args.i}{mkv_file} {args.o}{rename}"
+                    print(command)
+                    cmd = subprocess.Popen(os.path.join(args.e, command))
+                    cmd.communicate()
+            else:
+                continue
+        else:
+            continue
+    except:
+        break
