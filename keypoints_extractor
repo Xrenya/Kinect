@@ -1,44 +1,55 @@
 import argparse
 import os
 import subprocess
+import time
 
 parser = argparse.ArgumentParser(description="Enter the input and output files to extract keypoints")
 
-parser.add_argument("--e", "--extractor", help="Extractor path")
+parser.add_argument("--e", "--extractor", help="Extractor (offline processor) location")
 parser.add_argument("--i", "--input", help="Input path")
 parser.add_argument("--o", "--output", help="Output path")
 
 args = parser.parse_args()
 
-files = []
-for (dirpath, dirnames, filenames) in os.walk(args.i):
-    files.extend(filenames)
-    break
+folder_files = []
 
-mkv_files = []
-json_files = []
-for file in files:
-    if ".mkv" in file:
-        mkv_files.append(file)
-    elif ".json" in file:
-        json_files.append(file)
-    #print(mkv_files)
-    try:
-        for mkv_file in mkv_files:
-            #print(mkv_file)
-            for json_file in json_files:
-                #print(json_file)
-                if mkv_file.replace(".mkv", "") == json_file.replace(".json", ""):
-                    continue
-                else:
-                    rename = mkv_file.replace(".mkv", ".json")
-                    command = f"MKVProcessor.exe {args.i}{mkv_file} {args.o}{rename}"
-                    print(command)
-                    cmd = subprocess.Popen(os.path.join(args.e, command))
-                    cmd.communicate()
-            else:
-                continue
+def FolderFiles(file_dir=args.i):
+    mkv_files = []
+    json_files = []
+    for filename in os.listdir("C:/Users/rinat/Desktop/Rinat/"):
+        if ".mkv" in filename:
+            mkv_files.append(filename)
+        elif ".json" in filename:
+            json_files.append(filename)
         else:
-            continue
-    except:
-        break
+            pass
+    return mkv_files, json_files
+
+mkv_files, json_files = FolderFiles(file_dir=args.i)
+
+def KeypointsExtractor(mkv_files, json_files, inpt=args.i, out=args.o,exe=args.e):
+    for mkv_file in mkv_files:
+        if mkv_file.replace(".mkv", ".json") in json_files:
+            print("{} is already exist".format(mkv_file.replace(".mkv", ".json")))
+        else:
+            rename = mkv_file.replace(".mkv", ".json")
+            command = f"offline_processor.exe {inpt}{mkv_file} {out}{rename}"
+            print(command)
+            cmd = subprocess.Popen(os.path.join(exe, command))
+            cmd.communicate()
+
+try:
+    while 1:
+        time.sleep(60)
+        upd_mkv_files, upd_json_files = FolderFiles(file_dir=args.i)
+        added_mkv_files = [f for f in upd_mkv_files if not f in mkv_files]
+        removed_mkv_files = [f for f in mkv_files if not f in upd_mkv_files]
+        added_json_files = [f for f in upd_json_files if not f in json_files]
+        removed_json_files = [f for f in json_files if not f in upd_json_files]
+        KeypointsExtractor(upd_mkv_files, upd_json_files)
+        if added_json_files: 
+            print("Added: ", ", ".join(added_json_files))
+        if removed_json_files: 
+            print("Removed: ", ", ".join(removed_json_files))
+except KeyboardInterrupt:
+    pass
